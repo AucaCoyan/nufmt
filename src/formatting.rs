@@ -10,6 +10,24 @@ use nu_protocol::{
     Span,
 };
 
+mod expand {
+    use std::io::BufRead;
+
+    use crate::config::Config;
+    use log::trace;
+
+    pub(crate) fn formatted(contents: Vec<u8>, config: &Config) -> Vec<u8> {
+        let mut out: Vec<u8> = vec![];
+        // strip contents into lines
+        let iterator = contents.lines();
+        for line in iterator {
+            trace!("input line: {:?}", &line.unwrap());
+            out.extend(line.unwrap().as_bytes())
+        }
+        out
+    }
+}
+
 fn get_engine_state() -> EngineState {
     nu_cmd_lang::create_default_context()
 }
@@ -17,7 +35,7 @@ fn get_engine_state() -> EngineState {
 /// format an array of bytes
 ///
 /// Reading the file gives you a list of bytes
-pub(crate) fn format_inner(contents: &[u8], _config: &Config) -> Vec<u8> {
+pub(crate) fn format_inner(contents: &[u8], config: &Config) -> Vec<u8> {
     let engine_state = get_engine_state();
     let mut working_set = StateWorkingSet::new(&engine_state);
 
@@ -138,6 +156,7 @@ pub(crate) fn format_inner(contents: &[u8], _config: &Config) -> Vec<u8> {
         start = span.end + 1;
     }
 
+    out = expand::formatted(out, config);
     out
 }
 
